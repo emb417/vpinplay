@@ -1,27 +1,27 @@
 services:
   api:
     build: .
-    container_name: vpinfe_api
+    container_name: vpinplay_api
     ports:
       - "8888:8888"
     environment:
       - MONGO_URL=mongodb://mongo:27017
-      - MONGO_DB_NAME=vpinfe_db
+      - MONGO_DB_NAME=vpinplay_db
     depends_on:
       mongo:
         condition: service_healthy
     volumes:
       - .:/app
     networks:
-      - vpinfe_network
+      - vpinplay_network
 
   mongo:
     image: mongo:7.0
-    container_name: vpinfe_mongo
+    container_name: vpinplay_mongo
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_DATABASE=vpinfe_db
+      - MONGO_INITDB_DATABASE=vpinplay_db
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -30,11 +30,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - vpinfe_network
+      - vpinplay_network
 
 volumes:
   mongo_data:
 
 networks:
-  vpinfe_network:
+  vpinplay_network:
     driver: bridge

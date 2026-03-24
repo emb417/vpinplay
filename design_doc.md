@@ -479,7 +479,7 @@ Returns the user's highest-rated table states (sorted by rating desc).
 ```json
 [
   {
-    "userId": "cabinet_1",
+    "userId": "testuser",
     "vpsId": "lkSumsrF",
     "rating": 5,
     "lastRun": "2026-03-23T15:00:00Z",

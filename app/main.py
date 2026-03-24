@@ -15,7 +15,7 @@ load_dotenv()
 
 # Configuration
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "vpinfe_db")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "vpinplay_db")
 
 # MongoDB client
 mongo_client = None

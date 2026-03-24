@@ -113,7 +113,7 @@ pytest
 Environment variables (see `.env.example`):
 
 - `MONGO_URL` - MongoDB connection string (default: `mongodb://localhost:27017`)
-- `MONGO_DB_NAME` - Database name (default: `vpinfe_db`)
+- `MONGO_DB_NAME` - Database name (default: `vpinplay_db`)
 - `VPSDB_URL` - Source JSON URL (default: official VPS DB raw JSON URL)
 - `VPSDB_SYNC_INTERVAL_SECONDS` - Refresh interval for VPS DB sync loop (default: `3600` = 1 hour)
 - `VPSDB_SELECTED_FIELDS` - Comma-separated VPS DB keys to cache/enrich (default: `name,authors,manufacturer,year`)
