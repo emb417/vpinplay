@@ -565,6 +565,7 @@
                 vpsdbStatusRes,
                 weeklyActivityRes,
                 userCountRes,
+                tableCountRes,
                 topPlayerPlaysRows,
                 topPlayerRuntimeRows,
             ] = await Promise.all([
@@ -576,6 +577,7 @@
                 api("/api/v1/vpsdb/status"),
                 api("/api/v1/tables/activity-weekly?days=7"),
                 api("/api/v1/users/count"),
+                api("/api/v1/tables/count"),
                 loadTopPlayerActivity("startCountPlayed"),
                 loadTopPlayerActivity("runTimePlayed"),
             ]);
@@ -588,7 +590,9 @@
             const topRatedRows = topRatedRes.ok && Array.isArray(topRatedRes.data) ? topRatedRes.data : [];
             const newlyAddedRows = newlyAddedRes.ok && Array.isArray(newlyAddedRes.data) ? newlyAddedRes.data : [];
             const topVariantsRows = topVariantsRes.ok && Array.isArray(topVariantsRes.data) ? topVariantsRes.data : [];
-            q("kpiTotalTables").textContent = allTablesTotal === null ? "-" : String(allTablesTotal);
+            q("kpiTotalTables").textContent = tableCountRes.ok
+                ? fmtNumber(tableCountRes.data.totalTableRows)
+                : "-";
             q("kpiUserCount").textContent = userCountRes.ok ? fmtNumber(userCountRes.data.userCount) : "-";
 
             if (vpsdbStatusRes.ok) {
@@ -670,7 +674,6 @@
 
             if (ENABLE_ALL_TABLES_PANEL) {
                 await loadAllTablesPage();
-                q("kpiTotalTables").textContent = allTablesTotal === null ? "-" : String(allTablesTotal);
             }
         }
 

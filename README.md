@@ -37,6 +37,7 @@ This will start:
 
 ### Table queries
 - `GET /api/v1/tables` - Get all table variation rows (paginated, default 50)
+- `GET /api/v1/tables/count` - Get total table counts (`totalTableRows` and `uniqueVpsIdCount`)
 - `GET /api/v1/tables/{vpsId}` - Get canonical table metadata
 - `GET /api/v1/tables/top-rated` - Get top tables by average rating across all users (default limit 5)
 - `GET /api/v1/tables/top-play-time` - Get top tables by cumulative `runTime` across all users (highest first, default limit 5)
@@ -50,6 +51,7 @@ This will start:
 ### User state queries
 - `GET /api/v1/users` - Get all registered userIds (paginated, default limit 100)
 - `GET /api/v1/users/count` - Get total number of registered users
+- `GET /api/v1/users/top-activity` - Get top users by trailing N-day activity from sync deltas (`metric=startCountPlayed|runTimePlayed`, `days`, `limit`)
 - `GET /api/v1/users/{userId}/available` - Check if userId is available for registration
 - `GET /api/v1/users/{userId}/last-sync` - Get the user's last successful sync timestamp
 - `GET /api/v1/users/{userId}/tables/{vpsId}` - Get user state for a table

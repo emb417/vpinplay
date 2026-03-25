@@ -252,6 +252,22 @@ async def get_global_weekly_activity(
     }
 
 
+@router.get("/tables/count")
+async def get_table_counts(db: Database = Depends(get_db)):
+    """
+    Get total table counts.
+
+    - totalTableRows: total rows in `tables` collection (all variations)
+    - uniqueVpsIdCount: total distinct VPS IDs
+    """
+    total_rows = db["tables"].count_documents({})
+    unique_vps_ids = len(db["tables"].distinct("vpsId"))
+    return {
+        "totalTableRows": int(total_rows),
+        "uniqueVpsIdCount": int(unique_vps_ids),
+    }
+
+
 @router.get("/tables")
 async def get_all_tables(
     limit: int = Query(50, ge=1, le=200),
