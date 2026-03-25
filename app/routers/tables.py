@@ -35,7 +35,7 @@ async def get_global_top_rated_tables(
         {"$limit": limit}
     ]
 
-    results = list(db["user_table_state"].aggregate(pipeline))
+    results = list(db["user_table_ratings"].aggregate(pipeline))
     response = [
         {
             "vpsId": item["_id"],
@@ -64,7 +64,7 @@ async def get_global_table_rating_summary(vpsId: str, db: Database = Depends(get
         }
     ]
 
-    results = list(db["user_table_state"].aggregate(pipeline))
+    results = list(db["user_table_ratings"].aggregate(pipeline))
     if not results:
         response = [{"vpsId": vpsId, "avgRating": None, "ratingCount": 0}]
         return enrich_with_vpsdb(response, db)[0]

@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends
 from datetime import datetime
 from pymongo.database import Database
@@ -128,6 +130,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
     tables_col = db["tables"]  # TODO: Collection structure may change
     user_state_col = db["user_table_state"]  # TODO: Collection structure may change
     user_state_deltas_col = db["user_table_state_deltas"]  # Per-sync change log for weekly/runtime analytics
+    user_ratings_col = db["user_table_ratings"]  # Per-user, per-variation ratings for vote aggregation
     
     for table_payload in request.tables:
         try:
@@ -143,11 +146,14 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
                 else None
             )
             
+            vpx_file_data = table_payload.vpxFile.dict()
+            vpx_file_signature = json.dumps(vpx_file_data, sort_keys=True, separators=(",", ":"))
+
             # Upsert table variation document
             table_doc = {
                 "vpsId": vps_id,
                 "rom": table_payload.info.rom,
-                "vpxFile": table_payload.vpxFile.dict(),
+                "vpxFile": vpx_file_data,
                 "createdAt": received_at,
                 "lastSeenAt": received_at,
                 "updatedAt": received_at
@@ -156,7 +162,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
             # Check if this exact variation already exists
             existing_table = tables_col.find_one({
                 "vpsId": vps_id,
-                "vpxFile": table_payload.vpxFile.dict()
+                "vpxFile": vpx_file_data
             })
             
             if existing_table:
@@ -169,6 +175,34 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
             else:
                 tables_col.insert_one(table_doc)
                 summary.tablesCreated += 1
+
+            # Upsert per-variation rating document.
+            # This preserves one rating row per user + vpsId + variation, so vote counts
+            # can include multiple rated variants under the same vpsId.
+            user_ratings_col.update_one(
+                {
+                    "userIdNormalized": user_id,
+                    "vpsId": vps_id,
+                    "vpxFileSignature": vpx_file_signature,
+                },
+                {
+                    "$set": {
+                        "userId": user_id,
+                        "userIdNormalized": user_id,
+                        "vpsId": vps_id,
+                        "vpxFile": vpx_file_data,
+                        "vpxFileSignature": vpx_file_signature,
+                        "rating": normalized_rating,
+                        "altvpsid": table_payload.vpinfe.altvpsid,
+                        "lastSeenAt": received_at,
+                        "updatedAt": received_at,
+                    },
+                    "$setOnInsert": {
+                        "createdAt": received_at,
+                    },
+                },
+                upsert=True,
+            )
             
             # Upsert user state document
             user_state_doc = {
