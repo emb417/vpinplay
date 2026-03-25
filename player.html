@@ -14,6 +14,9 @@
             --ink-muted: #5d6a81;
             --accent: #0e7b6c;
             --accent-2: #1d4ed8;
+            --hero-a: #0f766e;
+            --hero-b: #1d4ed8;
+            --hero-border: rgba(255, 255, 255, 0.18);
             --line: #d9e2ef;
             --link: #1d4ed8;
             --table-row: #ffffff;
@@ -36,6 +39,9 @@
             --ink: #e8f0ff;
             --ink-muted: #9fb1cc;
             --line: #273b5b;
+            --hero-a: #0b4f57;
+            --hero-b: #1a3769;
+            --hero-border: rgba(159, 177, 204, 0.22);
             --link: #8ab4ff;
             --table-row: #10203a;
             --table-row-alt: #142844;
@@ -73,8 +79,9 @@
         }
 
         .hero {
-            background: linear-gradient(135deg, #0f766e, #1d4ed8);
+            background: linear-gradient(135deg, var(--hero-a), var(--hero-b));
             color: #f8fbff;
+            border: 1px solid var(--hero-border);
             border-radius: 20px;
             padding: 20px 22px;
             box-shadow: var(--shadow);

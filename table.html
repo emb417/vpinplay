@@ -12,6 +12,9 @@
             --line: #dbe3f0;
             --ink: #1b2a41;
             --muted: #63738d;
+            --hero-a: #0f766e;
+            --hero-b: #1d4ed8;
+            --hero-border: rgba(255, 255, 255, 0.18);
             --link: #1d4ed8;
             --table-row: #ffffff;
             --table-row-alt: #f8fbff;
@@ -29,6 +32,9 @@
             --line: #273b5b;
             --ink: #e8f0ff;
             --muted: #9fb1cc;
+            --hero-a: #0b4f57;
+            --hero-b: #1a3769;
+            --hero-border: rgba(159, 177, 204, 0.22);
             --link: #8ab4ff;
             --table-row: #10203a;
             --table-row-alt: #142844;
@@ -61,8 +67,9 @@
         }
 
         .hero {
-            background: linear-gradient(135deg, #0f766e, #1d4ed8);
+            background: linear-gradient(135deg, var(--hero-a), var(--hero-b));
             color: #f8fbff;
+            border: 1px solid var(--hero-border);
             border-radius: 18px;
             padding: 18px 20px;
             display: flex;
