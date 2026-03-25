@@ -36,6 +36,7 @@ async def get_global_top_rated_tables(
     ]
 
     results = list(db["user_table_ratings"].aggregate(pipeline))
+
     response = [
         {
             "vpsId": item["_id"],
@@ -333,11 +334,24 @@ async def get_table(vpsId: str, db: Database = Depends(get_db)):
     if not tables:
         return []
 
+    latest_alttitle_row = db["user_table_state"].find_one(
+        {"vpsId": vpsId, "alttitle": {"$nin": [None, ""]}},
+        sort=[("updatedAt", -1)],
+    )
+    latest_altvpsid_row = db["user_table_state"].find_one(
+        {"vpsId": vpsId, "altvpsid": {"$nin": [None, ""]}},
+        sort=[("updatedAt", -1)],
+    )
+    global_alttitle = latest_alttitle_row.get("alttitle") if latest_alttitle_row else None
+    global_altvpsid = latest_altvpsid_row.get("altvpsid") if latest_altvpsid_row else None
+
     response = [
         {
             "vpsId": table["vpsId"],
             "rom": table.get("rom"),
             "vpxFile": table["vpxFile"],
+            "alttitle": global_alttitle,
+            "altvpsid": global_altvpsid,
             "createdAt": table.get("createdAt", table.get("updatedAt")),
             "updatedAt": table["updatedAt"],
             "lastSeenAt": table["lastSeenAt"],

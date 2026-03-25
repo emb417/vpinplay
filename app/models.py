@@ -52,6 +52,7 @@ class UserStatePayload(BaseModel):
 
 # VPinPlay section models
 class VPinPlayPayload(BaseModel):
+    alttitle: Optional[str] = None
     altvpsid: Optional[str] = None
 
 
@@ -95,6 +96,8 @@ class GlobalTableResponse(BaseModel):
     vpsId: str
     rom: Optional[str] = None
     vpxFile: VPXFilePayload
+    alttitle: Optional[str] = None
+    altvpsid: Optional[str] = None
     vpsdb: Optional[dict[str, Any]] = None
     createdAt: Optional[datetime] = None
     updatedAt: datetime
@@ -109,6 +112,7 @@ class UserTableStateResponse(BaseModel):
     lastRun: Optional[str] = None
     startCount: int
     runTime: int
+    alttitle: Optional[str] = None
     altvpsid: Optional[str] = None
     vpsdb: Optional[dict[str, Any]] = None
     createdAt: Optional[datetime] = None

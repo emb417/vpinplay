@@ -193,6 +193,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
                         "vpxFile": vpx_file_data,
                         "vpxFileSignature": vpx_file_signature,
                         "rating": normalized_rating,
+                        "alttitle": table_payload.vpinfe.alttitle,
                         "altvpsid": table_payload.vpinfe.altvpsid,
                         "lastSeenAt": received_at,
                         "updatedAt": received_at,
@@ -213,6 +214,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
                 "lastRun": table_payload.user.lastRun,
                 "startCount": table_payload.user.startCount,
                 "runTime": table_payload.user.runTime,
+                "alttitle": table_payload.vpinfe.alttitle,
                 "altvpsid": table_payload.vpinfe.altvpsid,
                 "lastSeenAt": received_at,
                 "updatedAt": received_at
@@ -227,6 +229,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
                     existing_user_state.get("lastRun") != table_payload.user.lastRun or
                     existing_user_state.get("startCount") != table_payload.user.startCount or
                     existing_user_state.get("runTime") != table_payload.user.runTime or
+                    existing_user_state.get("alttitle") != table_payload.vpinfe.alttitle or
                     existing_user_state.get("altvpsid") != table_payload.vpinfe.altvpsid
                 )
                 
@@ -255,6 +258,8 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
                         "prevRunTime": prev_run_time,
                         "newRunTime": new_run_time,
                         "deltaRunTime": delta_run_time,
+                        "prevAlttitle": existing_user_state.get("alttitle"),
+                        "newAlttitle": table_payload.vpinfe.alttitle,
                         "prevAltvpsid": existing_user_state.get("altvpsid"),
                         "newAltvpsid": table_payload.vpinfe.altvpsid,
                     })
