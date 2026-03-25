@@ -364,7 +364,7 @@
             </section>
         </section>
 
-        <section class="panel bottom">
+        <section id="allTablesPanel" class="panel bottom">
             <h3>All Tables (Paginated)</h3>
             <div class="pager">
                 <button id="allTablesPrevBtn" class="btn" onclick="prevAllTablesPage()">Prev</button>
@@ -379,6 +379,7 @@
     <script>
         const API_BASE = "https://api.vpinplay.com:8888";
         const ALL_TABLES_PAGE_SIZE = 50;
+        const ENABLE_ALL_TABLES_PANEL = false;
         const TOP_PLAYER_DAYS = 7;
         const TOP_PLAYER_LIMIT = 5;
         let allTablesOffset = 0;
@@ -667,12 +668,18 @@
                 topPlayerRuntimeRows
             );
 
-            await loadAllTablesPage();
-            q("kpiTotalTables").textContent = allTablesTotal === null ? "-" : String(allTablesTotal);
+            if (ENABLE_ALL_TABLES_PANEL) {
+                await loadAllTablesPage();
+                q("kpiTotalTables").textContent = allTablesTotal === null ? "-" : String(allTablesTotal);
+            }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
             initTheme();
+            if (!ENABLE_ALL_TABLES_PANEL) {
+                const allTablesPanel = q("allTablesPanel");
+                if (allTablesPanel) allTablesPanel.style.display = "none";
+            }
             refreshDashboard();
         });
     </script>
