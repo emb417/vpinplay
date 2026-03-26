@@ -71,6 +71,8 @@ All query responses that include `vpsId` now include a `vpsdb` object from the V
 
 Weekly runtime/play analytics are derived from per-sync `runTime` and `startCount` deltas and only count positive increments. Data is available from when this tracking is active onward.
 
+Global `tables` variation rows now track submitting users via `submittedByUserIdsNormalized`. This enables per-user global cleanup without wiping all table metadata. Variations created before this provenance field existed cannot be attributed retroactively until they are seen again in a sync.
+
 ## Project Structure
 
 ```
@@ -147,6 +149,12 @@ Check if userId is available:
 ```bash
 curl http://localhost:8888/api/v1/users/cabinet_1/available
 # Returns: {"available": false}
+```
+
+Delete a user and their submitted records (maintenance script):
+
+```bash
+./scripts/purge_user_and_submissions.sh cabinet_1 --yes
 ```
 
 ## Testing

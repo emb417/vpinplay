@@ -189,6 +189,8 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
                 "vpsId": vps_id,
                 "rom": table_payload.info.rom,
                 "vpxFile": vpx_file_data,
+                "submittedByUserIdsNormalized": [user_id],
+                "firstSeenByUserIdNormalized": user_id,
                 "createdAt": received_at,
                 "lastSeenAt": received_at,
                 "updatedAt": received_at
@@ -204,7 +206,10 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
                 # Update lastSeenAt for this variation
                 tables_col.update_one(
                     {"_id": existing_table["_id"]},
-                    {"$set": {"lastSeenAt": received_at}}
+                    {
+                        "$set": {"lastSeenAt": received_at},
+                        "$addToSet": {"submittedByUserIdsNormalized": user_id},
+                    }
                 )
                 summary.unchanged += 1
             else:
