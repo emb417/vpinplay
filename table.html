@@ -273,6 +273,12 @@
             margin-bottom: 8px;
             font-size: 0.92rem;
         }
+        
+        .variation-subtitle {
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin: -4px 0 8px;
+        }
 
         .variation-grid {
             display: grid;
@@ -299,6 +305,23 @@
         .variation-value {
             font-size: 0.9rem;
             word-break: break-word;
+        }
+        
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .chip {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--surface-2);
+            color: var(--muted);
+            padding: 4px 9px;
+            font-size: 0.78rem;
+            font-weight: 700;
         }
 
         @media (max-width: 640px) {
@@ -344,6 +367,11 @@
             <section class="panel">
                 <h3 id="tableVariationsTitle">Table Variations (0)</h3>
                 <div id="tableByIdDetails" class="variation-details"></div>
+            </section>
+            
+            <section class="panel">
+                <h3 id="derivativeDifferencesTitle">Derivative Differences</h3>
+                <div id="derivativeDifferencesDetails" class="variation-details"></div>
             </section>
 
             <section class="panel">
@@ -579,6 +607,122 @@
             });
             container.innerHTML = html;
         }
+        
+        function toComparableValue(value) {
+            if (value === null || value === undefined) return "";
+            return String(value);
+        }
+        
+        function buildDerivativeComparableMap(row) {
+            const out = {};
+            out.rom = toComparableValue(row?.rom);
+            out.alttitle = toComparableValue(row?.alttitle);
+            out.altvpsid = toComparableValue(row?.altvpsid);
+            flattenObject(row?.vpxFile || {}, "vpxFile").forEach(item => {
+                out[item.key] = toComparableValue(item.value);
+            });
+            return out;
+        }
+        
+        function chooseBaselineVariation(rows) {
+            const ts = (row) => {
+                const raw = row?.createdAt || row?.updatedAt || row?.lastSeenAt;
+                const d = new Date(raw || 0);
+                return Number.isNaN(d.getTime()) ? Number.MAX_SAFE_INTEGER : d.getTime();
+            };
+            return [...rows].sort((a, b) => {
+                const ta = ts(a);
+                const tb = ts(b);
+                if (ta !== tb) return ta - tb;
+                const fa = String(a?.vpxFile?.filename || "");
+                const fb = String(b?.vpxFile?.filename || "");
+                return fa.localeCompare(fb);
+            })[0];
+        }
+        
+        function renderDerivativeDifferences(rows) {
+            const container = q("derivativeDifferencesDetails");
+            const title = q("derivativeDifferencesTitle");
+            const count = Array.isArray(rows) ? rows.length : 0;
+            if (title) {
+                title.textContent = `Derivative Differences (${Math.max(0, count - 1)})`;
+            }
+            
+            if (!rows || rows.length === 0) {
+                container.innerHTML = `<div class="muted">No submitted table data found for this VPS ID.</div>`;
+                return;
+            }
+            if (rows.length === 1) {
+                container.innerHTML = `<div class="muted">Only one variation exists, so there is no derivative comparison yet.</div>`;
+                return;
+            }
+            
+            const baseline = chooseBaselineVariation(rows);
+            const baselineMap = buildDerivativeComparableMap(baseline);
+            const allKeys = new Set(Object.keys(baselineMap));
+            const rowMaps = rows.map(row => {
+                const map = buildDerivativeComparableMap(row);
+                Object.keys(map).forEach(key => allKeys.add(key));
+                return { row, map };
+            });
+            
+            const varyingKeys = [...allKeys].filter(key => {
+                const vals = new Set(rowMaps.map(entry => entry.map[key] ?? ""));
+                return vals.size > 1;
+            }).sort((a, b) => a.localeCompare(b));
+            
+            const field = (label, value, isHtml = false) => `
+                <div class="variation-field">
+                    <div class="variation-label">${escapeHtml(label)}</div>
+                    <div class="variation-value">${isHtml ? (value ?? "-") : escapeHtml(value ?? "-")}</div>
+                </div>
+            `;
+            
+            const baselineFilename = baseline?.vpxFile?.filename || "Unknown file";
+            const chips = varyingKeys.length
+                ? `<div class="chips">${varyingKeys.map(key => `<span class="chip">${escapeHtml(key)}</span>`).join("")}</div>`
+                : `<div class="muted">No field-level metadata differences detected.</div>`;
+            
+            let html = `
+                <article class="variation-card">
+                    <div class="variation-title">Baseline (first seen): ${escapeHtml(baselineFilename)}</div>
+                    <div class="variation-subtitle">Compared by: vpxFile fields, ROM, alt title, alt VPS ID</div>
+                    ${chips}
+                </article>
+            `;
+            
+            rows
+                .filter(row => row !== baseline)
+                .forEach(row => {
+                    const currentMap = buildDerivativeComparableMap(row);
+                    const changedKeys = varyingKeys.filter(key => (currentMap[key] ?? "") !== (baselineMap[key] ?? ""));
+                    const filename = row?.vpxFile?.filename || "Unknown file";
+                    const changedFields = changedKeys.length
+                        ? changedKeys.map(key => {
+                            const current = currentMap[key] ?? "";
+                            return field(
+                                key,
+                                `${escapeHtml(current || "(empty)")} <span class="muted">(baseline: ${escapeHtml((baselineMap[key] ?? "") || "(empty)")})</span>`,
+                                true
+                            );
+                        }).join("")
+                        : `<div class="muted">No differences from baseline in compared fields.</div>`;
+                    
+                    html += `
+                        <article class="variation-card">
+                            <div class="variation-title">${escapeHtml(filename)}</div>
+                            <div class="variation-subtitle">${changedKeys.length} differing field${changedKeys.length === 1 ? "" : "s"} from baseline</div>
+                            <div class="variation-grid">
+                                ${field("submittedBy", fmtSubmitters(row?.submittedByUserIdsNormalized), true)}
+                                ${field("createdAt", fmtDate(row?.createdAt))}
+                                ${changedFields}
+                            </div>
+                        </article>
+                    `;
+                });
+            
+            container.innerHTML = html;
+        }
 
         function flattenObject(obj, prefix = "") {
             const out = [];
@@ -654,6 +798,7 @@
                 renderTable("playerRatingsTable", [{ label: "Info", getter: () => "Enter a VPS ID" }], []);
                 q("playerRatingsTitle").textContent = "Player Ratings (0)";
                 renderVariationDetails([]);
+                renderDerivativeDifferences([]);
                 renderVpsdbDetails(null);
                 return;
             }
@@ -690,6 +835,7 @@
 
             const byIdRows = tableByIdRes.ok && Array.isArray(tableByIdRes.data) ? tableByIdRes.data : [];
             renderVariationDetails(byIdRows);
+            renderDerivativeDifferences(byIdRows);
 
             const vpsdbRecord = vpsdbByIdRes.ok && vpsdbByIdRes.data ? vpsdbByIdRes.data : null;
             renderVpsdbDetails(vpsdbRecord);
