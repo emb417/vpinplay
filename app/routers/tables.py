@@ -83,6 +83,40 @@ async def get_global_table_rating_summary(vpsId: str, db: Database = Depends(get
     return enrich_with_vpsdb(response, db)[0]
 
 
+@router.get("/tables/{vpsId}/user-ratings")
+async def get_table_user_ratings(vpsId: str, db: Database = Depends(get_db)):
+    """
+    Get player ratings for a table (one row per user).
+    """
+    rows = list(
+        db["user_table_state"]
+        .find(
+            {
+                "vpsId": vpsId,
+                "rating": {"$gte": 1, "$lte": 5},
+            },
+            {
+                "_id": 0,
+                "userId": 1,
+                "rating": 1,
+                "lastRun": 1,
+                "updatedAt": 1,
+            },
+        )
+        .sort([("rating", -1), ("userId", 1)])
+    )
+
+    return [
+        {
+            "userId": row.get("userId"),
+            "rating": row.get("rating"),
+            "lastRun": row.get("lastRun"),
+            "updatedAt": row.get("updatedAt"),
+        }
+        for row in rows
+    ]
+
+
 @router.get("/tables/newly-added")
 async def get_global_new_tables(
     limit: int = Query(100, ge=1, le=100),

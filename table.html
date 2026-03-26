@@ -337,6 +337,11 @@
             </section>
 
             <section class="panel">
+                <h3 id="playerRatingsTitle">Player Ratings (0)</h3>
+                <table id="playerRatingsTable"></table>
+            </section>
+
+            <section class="panel">
                 <h3 id="tableVariationsTitle">Table Variations (0)</h3>
                 <div id="tableByIdDetails" class="variation-details"></div>
             </section>
@@ -443,6 +448,12 @@
             const id = String(vpsId || "").trim();
             if (!id) return "-";
             return `<a href="https://virtualpinballspreadsheet.github.io/games?game=${encodeURIComponent(id)}" target="_blank" rel="noopener noreferrer">${escapeHtml(id)}</a>`;
+        }
+
+        function linkUserId(userId) {
+            const id = String(userId || "").trim();
+            if (!id) return "-";
+            return `<a href="player.html?userid=${encodeURIComponent(id)}">${escapeHtml(id)}</a>`;
         }
 
         async function api(path) {
@@ -621,13 +632,16 @@
 
             if (!vpsId) {
                 renderTable("ratingSummaryTable", [{ label: "Info", getter: () => "Enter a VPS ID" }], []);
+                renderTable("playerRatingsTable", [{ label: "Info", getter: () => "Enter a VPS ID" }], []);
+                q("playerRatingsTitle").textContent = "Player Ratings (0)";
                 renderVariationDetails([]);
                 renderVpsdbDetails(null);
                 return;
             }
 
-            const [ratingSummaryRes, tableByIdRes, vpsdbByIdRes] = await Promise.all([
+            const [ratingSummaryRes, playerRatingsRes, tableByIdRes, vpsdbByIdRes] = await Promise.all([
                 api(`/api/v1/tables/${encodeURIComponent(vpsId)}/rating-summary`),
+                api(`/api/v1/tables/${encodeURIComponent(vpsId)}/user-ratings`),
                 api(`/api/v1/tables/${encodeURIComponent(vpsId)}`),
                 api(`/api/v1/vpsdb/${encodeURIComponent(vpsId)}`),
             ]);
@@ -641,6 +655,18 @@
                     { label: "VPS ID", getter: r => linkVpsId(r.vpsId), html: true },
                 ],
                 ratingSummaryRows
+            );
+
+            const playerRatingsRows = playerRatingsRes.ok && Array.isArray(playerRatingsRes.data) ? playerRatingsRes.data : [];
+            q("playerRatingsTitle").textContent = `Player Ratings (${playerRatingsRows.length})`;
+            renderTable("playerRatingsTable",
+                [
+                    { label: "Player", getter: r => linkUserId(r.userId), html: true },
+                    { label: "Score", getter: r => fmtRatingStars(r.rating, { showNumeric: true }), html: true },
+                    { label: "Last Played", getter: r => fmtDate(r.lastRun) },
+                    { label: "Updated", getter: r => fmtDate(r.updatedAt) },
+                ],
+                playerRatingsRows
             );
 
             const byIdRows = tableByIdRes.ok && Array.isArray(tableByIdRes.data) ? tableByIdRes.data : [];
