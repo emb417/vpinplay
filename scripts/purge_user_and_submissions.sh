@@ -101,6 +101,9 @@ const before = {
   tablesWithOwnershipTag: db.tables.countDocuments({
     submittedByUserIdsNormalized: { \$regex: '^' + escapeRegex(user) + '\$', \$options: 'i' },
   }),
+  tablesFirstSeenByUser: db.tables.countDocuments({
+    firstSeenByUserIdNormalized: { \$regex: '^' + escapeRegex(user) + '\$', \$options: 'i' },
+  }),
 };
 
 const deleted = {
@@ -142,6 +145,14 @@ const tableRowsWithoutSubmittersDeleted = db.tables.deleteMany({
   ],
 }).deletedCount;
 
+const legacyFirstSeenRowsDeleted = db.tables.deleteMany({
+  firstSeenByUserIdNormalized: { \$regex: '^' + escapeRegex(user) + '\$', \$options: 'i' },
+  \$or: [
+    { submittedByUserIdsNormalized: { \$exists: false } },
+    { submittedByUserIdsNormalized: { \$size: 0 } },
+  ],
+}).deletedCount;
+
 const activeVpsIds = db.user_table_state.distinct('vpsId');
 const orphanedTableRowsDeleted = db.tables.deleteMany({
   vpsId: { \$nin: activeVpsIds },
@@ -154,6 +165,7 @@ printjson({
   tables: {
     ownershipRemoved,
     tableRowsWithoutSubmittersDeleted,
+    legacyFirstSeenRowsDeleted,
     orphanedTableRowsDeleted,
     activeVpsIdCount: activeVpsIds.length,
   },
