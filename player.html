@@ -232,6 +232,35 @@
             color: var(--ink);
         }
 
+        .panel-embed {
+            margin-top: 16px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-embed h3 {
+            margin: 0 0 8px;
+            font-size: 1rem;
+            color: var(--ink);
+        }
+
+        .panel-embed-note {
+            margin: 0 0 12px;
+            color: var(--ink-muted);
+            font-size: 0.9rem;
+        }
+
+        .panel-embed-frame {
+            width: 100%;
+            min-height: 980px;
+            border: 0;
+            border-radius: 12px;
+            background: transparent;
+        }
+
         .status {
             margin-top: 10px;
             padding: 8px 10px;
@@ -452,6 +481,16 @@
                     <table id="userNewlyAddedTable"></table>
                 </section>
             </div>
+
+            <section class="panel-embed">
+                <h3>Attack From Mars Score Panel Test</h3>
+                <p class="panel-embed-note">Temporary test embed using hardcoded <span class="mono">userid=superhac</span>.</p>
+                <iframe
+                    class="panel-embed-frame"
+                    src="app/panels/score_user/9Paf7-CL.html?userid=superhac"
+                    title="Attack From Mars score panel test">
+                </iframe>
+            </section>
         </section>
     </div>
 

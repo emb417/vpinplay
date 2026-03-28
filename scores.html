@@ -424,7 +424,7 @@
                 <input id="vpsIdInput" type="text" placeholder="Show this table across all users" onkeydown="if(event.key==='Enter'){refreshDashboard();}">
             </div>
             <button class="btn" onclick="refreshDashboard()">Apply</button>
-            <div class="controls-note">Without a VPS ID, this page loads scored tables for one user. When a VPS ID is provided, it uses the cross-user scored-table query for that specific table.</div>
+            <div class="controls-note">With a user ID, this page uses the per-user scored-table query and optionally filters by VPS ID. If you leave user ID blank but provide a VPS ID, it uses the cross-user scored-table query for that table.</div>
             <div id="status" class="status">Ready.</div>
         </section>
 
@@ -622,11 +622,17 @@
             }
         }
 
-        async function fetchRowsWithUserScore(userId) {
+        async function fetchRowsWithUserScore(userId, vpsId = "") {
             const allRows = [];
 
             for (let offset = 0; ; offset += PAGE_SIZE) {
-                const result = await api(`/api/v1/users/${encodeURIComponent(userId)}/tables/with-score?limit=${PAGE_SIZE}&offset=${offset}`);
+                const query = new URLSearchParams({
+                    limit: String(PAGE_SIZE),
+                    offset: String(offset),
+                });
+                if (vpsId) query.set("vpsId", vpsId);
+
+                const result = await api(`/api/v1/users/${encodeURIComponent(userId)}/tables/with-score?${query.toString()}`);
                 if (!result.ok || !Array.isArray(result.data)) {
                     return { ok: false, rows: allRows, status: result.status, error: result.data?.error || "Request failed" };
                 }
@@ -819,15 +825,17 @@
                 return;
             }
 
-            const usingVpsIdQuery = !!vpsIdFilter;
+            const usingCrossUserVpsIdQuery = !userId && !!vpsIdFilter;
             setStatus(
-                usingVpsIdQuery
+                usingCrossUserVpsIdQuery
                     ? `Loading scored rows for ${vpsIdFilter} across all users...`
-                    : `Loading scored tables for ${userId}...`
+                    : userId && vpsIdFilter
+                        ? `Loading scored rows for ${userId} filtered to ${vpsIdFilter}...`
+                        : `Loading scored tables for ${userId}...`
             );
-            const result = usingVpsIdQuery
+            const result = usingCrossUserVpsIdQuery
                 ? await fetchRowsWithScoreForVpsId(vpsIdFilter)
-                : await fetchRowsWithUserScore(userId);
+                : await fetchRowsWithUserScore(userId, vpsIdFilter);
 
             if (!result.ok) {
                 setStatus(`Failed to load scored rows (${result.status || "network"}).`);
@@ -858,13 +866,13 @@
             renderKeyChips(summary.keyCounts);
             renderScoreCards(filteredRows);
 
-            if (usingVpsIdQuery) {
+            if (usingCrossUserVpsIdQuery) {
                 setStatus(
                     `Loaded ${filteredRows.length} scored row${filteredRows.length === 1 ? "" : "s"} for ${vpsIdFilter} across all users.`
                 );
             } else {
                 setStatus(
-                    `Loaded ${filteredRows.length} scored table entr${filteredRows.length === 1 ? "y" : "ies"} for ${userId}.`
+                    `Loaded ${filteredRows.length} scored table entr${filteredRows.length === 1 ? "y" : "ies"} for ${userId}${vpsIdFilter ? ` filtered to ${vpsIdFilter}` : ""}.`
                 );
             }
         }

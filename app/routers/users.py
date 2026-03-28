@@ -508,6 +508,7 @@ async def get_user_newly_added_tables(
 @router.get("/users/{userId}/tables/with-score", response_model=List[UserTableStateResponse])
 async def get_user_tables_with_score(
     userId: str,
+    vpsId: str | None = Query(None, min_length=1, description="Optional VPS ID filter"),
     limit: int = Query(100, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Database = Depends(get_db)
@@ -516,17 +517,22 @@ async def get_user_tables_with_score(
     Get all current table states for a user where a score payload has been submitted.
 
     Optional query parameters:
+    - vpsId: Restrict results to one canonical VPS table ID
     - limit: Maximum number of results (default 100, max 100)
     - offset: Number of results to skip (default 0)
     """
+    query = {
+        "$and": [
+            user_id_filter(userId),
+            {"score": {"$type": "object"}},
+        ]
+    }
+    if vpsId:
+        query["$and"].append({"vpsId": vpsId})
+
     user_states = list(
         db["user_table_state"]
-        .find({
-            "$and": [
-                user_id_filter(userId),
-                {"score": {"$type": "object"}},
-            ]
-        })
+        .find(query)
         .sort("updatedAt", -1)
         .skip(offset)
         .limit(limit)
