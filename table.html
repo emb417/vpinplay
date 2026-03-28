@@ -172,8 +172,12 @@
         .grid-panels {
             margin-top: 12px;
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
+        }
+
+        .panel-full {
+            grid-column: 1 / -1;
         }
 
         .panel {
@@ -335,6 +339,7 @@
         }
 
         @media (max-width: 640px) {
+            .grid-panels { grid-template-columns: 1fr; }
             input { min-width: 0; width: 100%; }
             .variation-grid { grid-template-columns: 1fr; }
         }
@@ -390,7 +395,7 @@
                 <div id="associatedRomsDetails" class="variation-details"></div>
             </section>
 
-            <section class="panel">
+            <section class="panel panel-full">
                 <h3 id="derivativeDifferencesTitle">Derivative Differences</h3>
                 <div id="derivativeDifferencesDetails" class="variation-details"></div>
             </section>
