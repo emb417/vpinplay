@@ -172,8 +172,12 @@
         .grid-panels {
             margin-top: 12px;
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
+        }
+
+        .panel-full {
+            grid-column: 1 / -1;
         }
 
         .panel {
@@ -335,6 +339,7 @@
         }
 
         @media (max-width: 640px) {
+            .grid-panels { grid-template-columns: 1fr; }
             input { min-width: 0; width: 100%; }
             .variation-grid { grid-template-columns: 1fr; }
         }
@@ -352,6 +357,7 @@
                 <button class="btn" onclick="refreshDashboard()">Refresh</button>
                 <a class="pill" href="main.html">Open Global</a>
                 <a class="pill" href="player.html">Open Player</a>
+                <a class="pill" href="scores.html">Open Scores</a>
             </div>
         </section>
 
@@ -386,6 +392,11 @@
             </section>
 
             <section class="panel">
+                <h3 id="associatedRomsTitle">Associated ROMs</h3>
+                <div id="associatedRomsDetails" class="variation-details"></div>
+            </section>
+
+            <section class="panel panel-full">
                 <h3 id="derivativeDifferencesTitle">Derivative Differences</h3>
                 <div id="derivativeDifferencesDetails" class="variation-details"></div>
             </section>
@@ -673,6 +684,80 @@
             container.innerHTML = html;
         }
 
+        function renderAssociatedRoms(rows) {
+            const container = q("associatedRomsDetails");
+            const title = q("associatedRomsTitle");
+
+            if (!rows || rows.length === 0) {
+                if (title) title.textContent = "Associated ROMs (0)";
+                container.innerHTML = `<div class="muted">No submitted table data found for this VPS ID.</div>`;
+                return;
+            }
+
+            const romMap = new Map();
+            rows.forEach((row, index) => {
+                const rawRom = [row?.rom, row?.vpxFile?.rom]
+                    .find(value => String(value || "").trim() !== "");
+                const rom = String(rawRom || "").trim();
+                if (!rom) return;
+
+                const key = rom.toLowerCase();
+                if (!romMap.has(key)) {
+                    romMap.set(key, {
+                        rom,
+                        filenames: new Set(),
+                        submitters: new Set(),
+                        variants: 0,
+                        firstIndex: index,
+                    });
+                }
+
+                const entry = romMap.get(key);
+                entry.variants += 1;
+
+                const filename = String(row?.vpxFile?.filename || "").trim();
+                if (filename) entry.filenames.add(filename);
+
+                (row?.submittedByUserIdsNormalized || []).forEach(userId => {
+                    const normalized = String(userId || "").trim();
+                    if (normalized) entry.submitters.add(normalized);
+                });
+            });
+
+            const romEntries = [...romMap.values()].sort((a, b) => {
+                if (a.variants !== b.variants) return b.variants - a.variants;
+                if (a.firstIndex !== b.firstIndex) return a.firstIndex - b.firstIndex;
+                return a.rom.localeCompare(b.rom);
+            });
+
+            if (title) {
+                title.textContent = `Associated ROMs (${romEntries.length})`;
+            }
+
+            if (romEntries.length === 0) {
+                container.innerHTML = `<div class="muted">No ROM values were found on the submitted variations for this VPS ID.</div>`;
+                return;
+            }
+
+            const field = (label, value, isHtml = false) => `
+                <div class="variation-field">
+                    <div class="variation-label">${escapeHtml(label)}</div>
+                    <div class="variation-value">${isHtml ? (value ?? "-") : escapeHtml(value ?? "-")}</div>
+                </div>
+            `;
+
+            container.innerHTML = romEntries.map(entry => `
+                <article class="variation-card">
+                    <div class="variation-title">${escapeHtml(entry.rom)}</div>
+                    <div class="variation-grid">
+                        ${field("variationCount", String(entry.variants))}
+                        ${field("submitters", fmtSubmitters([...entry.submitters]), true)}
+                        ${field("files", [...entry.filenames].map(escapeHtml).join("<br>") || "-", true)}
+                    </div>
+                </article>
+            `).join("");
+        }
+
         function flattenObject(obj, prefix = "") {
             const out = [];
             if (obj === null || obj === undefined) {
@@ -746,6 +831,7 @@
                 renderTable("ratingSummaryTable", [{ label: "Info", getter: () => "Enter a VPS ID" }], []);
                 renderTable("playerRatingsTable", [{ label: "Info", getter: () => "Enter a VPS ID" }], []);
                 q("playerRatingsTitle").textContent = "Player Ratings (0)";
+                renderAssociatedRoms([]);
                 renderDerivativeDifferences([]);
                 renderVpsdbDetails(null);
                 return;
@@ -782,6 +868,7 @@
             );
 
             const byIdRows = tableByIdRes.ok && Array.isArray(tableByIdRes.data) ? tableByIdRes.data : [];
+            renderAssociatedRoms(byIdRows);
             renderDerivativeDifferences(byIdRows);
 
             const vpsdbRecord = vpsdbByIdRes.ok && vpsdbByIdRes.data ? vpsdbByIdRes.data : null;
