@@ -384,12 +384,13 @@
     }
 
     const extraLines = Array.isArray(entry.extra_lines) ? entry.extra_lines : [];
-    const detail = scoreText(entry);
+    const hasExtraOnlyDetail = (entry.score === null || entry.score === undefined) && extraLines.length > 0;
+    const detail = hasExtraOnlyDetail ? "" : scoreText(entry);
     host.innerHTML = `
       <div class="afm-extra">
         <div class="afm-pill">${entry.initials || "-"}</div>
-        <div class="afm-detail">${detail}</div>
-        ${extraLines.length && entry.score == null
+        ${detail ? `<div class="afm-detail">${detail}</div>` : ""}
+        ${extraLines.length
           ? extraLines.map(line => `<div class="afm-subtle">${line}</div>`).join("")
           : ""}
       </div>
@@ -457,8 +458,8 @@
     if (grid) grid.hidden = false;
 
     const updatedAt = row.updatedAt ? new Date(row.updatedAt).toLocaleString() : "Unknown";
-    q("afm-meta").textContent = `${entries.length} score entries loaded. Last update: ${updatedAt}`;
-    setStatus(`Loaded Attack from Mars scores for ${userId}.`);
+    q("afm-meta").textContent = `Last update: ${updatedAt}`;
+    setStatus("Score data loaded.");
   }
 
   loadPanel();
