@@ -254,7 +254,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
             incoming_start_count = _coerce_non_negative_int(table_payload.user.startCount)
             incoming_run_time = _coerce_non_negative_int(table_payload.user.runTime)
             incoming_last_run = table_payload.user.lastRun
-            incoming_score = _normalize_score_payload(table_payload.score)
+            incoming_score = _normalize_score_payload(table_payload.user.score)
 
             user_state_doc = {
                 "userId": user_id,

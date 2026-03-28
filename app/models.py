@@ -34,10 +34,13 @@ class VPXFilePayload(BaseModel):
 
 # User section models
 class UserStatePayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     rating: Optional[int] = Field(None, ge=0, le=5, description="Rating 0-5")
     lastRun: Optional[Union[str, int]] = None
     startCount: int = 0
     runTime: int = 0
+    score: Optional[dict[str, Any]] = Field(None, alias="Score")
 
     @field_validator('lastRun', mode='before')
     @classmethod
@@ -83,7 +86,6 @@ class TableSyncPayload(BaseModel):
     user: UserStatePayload
     vpxFile: VPXFilePayload
     vpinfe: VPinPlayPayload
-    score: Optional[dict[str, Any]] = Field(None, alias="Score")
 
 
 # Full sync request
