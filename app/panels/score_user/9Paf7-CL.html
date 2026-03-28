@@ -1,10 +1,16 @@
 <div id="afm-score-panel" class="afm-score-panel">
   <div class="afm-shell">
     <div class="afm-header">
-      <div>
-        <div class="afm-kicker">Attack from Mars</div>
-        <h2>Score Panel</h2>
-        <div class="afm-meta" id="afm-meta">Waiting for user score data.</div>
+      <div class="afm-header-main">
+        <img
+          class="afm-art"
+          src="https://github.com/superhac/vpinmediadb/raw/refs/heads/main/9Paf7-CL/1k/bg.png"
+          alt="Attack from Mars backglass art">
+        <div class="afm-header-copy">
+          <div class="afm-kicker">Attack from Mars</div>
+          <h2>Score Panel</h2>
+          <div class="afm-meta" id="afm-meta">Waiting for user score data.</div>
+        </div>
       </div>
       <div class="afm-badge" id="afm-user-badge">No User</div>
     </div>
@@ -73,6 +79,28 @@
     align-items: flex-start;
     gap: 14px;
     margin-bottom: 14px;
+  }
+
+  .afm-header-main {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .afm-art {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 18px;
+    border: 1px solid rgba(107, 191, 255, 0.22);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+    background: rgba(8, 17, 29, 0.6);
+  }
+
+  .afm-header-copy {
+    min-width: 0;
   }
 
   .afm-kicker {
@@ -234,6 +262,16 @@
   }
 
   @media (max-width: 760px) {
+    .afm-header-main {
+      grid-template-columns: 1fr;
+    }
+
+    .afm-art {
+      width: 100%;
+      max-width: 200px;
+      height: 200px;
+    }
+
     .afm-grid {
       grid-template-columns: 1fr;
     }
