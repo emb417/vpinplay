@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPinPlay Scores Dashboard</title>
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --surface: #ffffff;
+            --surface-soft: #f8fbff;
+            --surface-2: #eef4ff;
+            --ink: #152238;
+            --ink-muted: #5d6a81;
+            --accent: #0e7b6c;
+            --accent-2: #1d4ed8;
+            --hero-a: #0f766e;
+            --hero-b: #1d4ed8;
+            --hero-border: rgba(255, 255, 255, 0.18);
+            --line: #d9e2ef;
+            --link: #1d4ed8;
+            --card-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+            --radius: 16px;
+            --bg-glow-a: rgba(14, 123, 108, 0.18);
+            --bg-glow-b: rgba(29, 78, 216, 0.16);
+            --table-row: #ffffff;
+            --table-row-alt: #f8fbff;
+            --table-hover: #e9f2ff;
+            --ok-bg: #ddfbf3;
+            --ok-border: #9fe8d8;
+            --ok-ink: #0f766e;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a1220;
+            --surface: #111d31;
+            --surface-soft: #14243e;
+            --surface-2: #172742;
+            --ink: #e8f0ff;
+            --ink-muted: #9fb1cc;
+            --line: #273b5b;
+            --hero-a: #0b4f57;
+            --hero-b: #1a3769;
+            --hero-border: rgba(159, 177, 204, 0.22);
+            --link: #8ab4ff;
+            --card-shadow: 0 16px 40px rgba(2, 8, 20, 0.5);
+            --bg-glow-a: rgba(12, 109, 96, 0.24);
+            --bg-glow-b: rgba(29, 78, 216, 0.2);
+            --table-row: #10203a;
+            --table-row-alt: #142844;
+            --table-hover: #1e365b;
+            --ok-bg: rgba(15, 118, 110, 0.18);
+            --ok-border: rgba(71, 216, 200, 0.35);
+            --ok-ink: #47d8c8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background:
+                radial-gradient(900px 420px at -10% -10%, var(--bg-glow-a), transparent 60%),
+                radial-gradient(900px 420px at 110% -15%, var(--bg-glow-b), transparent 65%),
+                var(--bg);
+            font-family: "Avenir Next", "Montserrat", "Segoe UI", sans-serif;
+            transition: background 180ms ease, color 180ms ease;
+        }
+
+        a { color: var(--link); }
+
+        .wrap {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 28px 18px 44px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--hero-a), var(--hero-b));
+            color: #f8fbff;
+            border: 1px solid var(--hero-border);
+            border-radius: 20px;
+            padding: 20px 22px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(1.3rem, 2.1vw, 2rem);
+        }
+
+        .hero-meta {
+            margin-top: 6px;
+            color: rgba(241, 245, 249, 0.9);
+            font-size: 0.92rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            color: #fff;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #173364;
+            font-weight: 700;
+            padding: 9px 14px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: transform 120ms ease, filter 120ms ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(0.97);
+        }
+
+        .btn-theme {
+            background: transparent;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .controls, .panel, .score-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--card-shadow);
+        }
+
+        .controls {
+            margin-top: 16px;
+            padding: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 240px;
+        }
+
+        .field label {
+            color: var(--ink-muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input {
+            border: 1px solid var(--line);
+            background: #fff;
+            color: #111827;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            min-width: 0;
+        }
+
+        .controls-note {
+            width: 100%;
+            color: var(--ink-muted);
+            font-size: 0.88rem;
+        }
+
+        .status {
+            width: fit-content;
+            margin-top: 12px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            background: var(--ok-bg);
+            color: var(--ok-ink);
+            border: 1px solid var(--ok-border);
+        }
+
+        .grid-kpi {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .kpi {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 12px 14px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .kpi-label {
+            color: var(--ink-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .kpi-sub {
+            margin-top: 4px;
+            color: var(--ink-muted);
+            font-size: 0.86rem;
+        }
+
+        .grid-panels {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .panel {
+            padding: 14px;
+            min-height: 220px;
+            overflow: hidden;
+        }
+
+        .panel-full {
+            grid-column: 1 / -1;
+        }
+
+        .panel h3 {
+            margin: 0 0 10px;
+            font-size: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--ink-muted);
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--surface-2);
+        }
+
+        tr td { background: var(--table-row); }
+        tbody tr:nth-child(even) td { background: var(--table-row-alt); }
+        tbody tr:hover td { background: var(--table-hover); }
+
+        .muted { color: var(--ink-muted); }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--line);
+            background: var(--surface-2);
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .chip-count {
+            color: var(--ink-muted);
+            font-weight: 600;
+        }
+
+        .score-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .score-card {
+            padding: 14px;
+        }
+
+        .score-card-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .score-card-title {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .score-card-subtitle {
+            margin-top: 4px;
+            color: var(--ink-muted);
+            font-size: 0.88rem;
+        }
+
+        .score-badge {
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .score-field {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--surface-soft);
+            padding: 10px;
+        }
+
+        .score-label {
+            color: var(--ink-muted);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .score-value {
+            font-size: 0.92rem;
+            word-break: break-word;
+        }
+
+        pre {
+            margin: 0;
+            padding: 12px;
+            border-radius: 12px;
+            background: #091224;
+            color: #dbeafe;
+            overflow: auto;
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 980px) {
+            .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .grid-panels { grid-template-columns: 1fr; }
+            .score-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .panel-full { grid-column: auto; }
+        }
+
+        @media (max-width: 640px) {
+            .wrap { padding: 20px 12px 30px; }
+            .controls { padding: 12px; }
+            .field { min-width: 100%; }
+            .grid-kpi { grid-template-columns: 1fr; }
+            .score-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <section class="hero">
+            <div>
+                <h1>Scores Dashboard (Testing)</h1>
+                <div id="lastRefresh" class="hero-meta">Last refresh: -</div>
+            </div>
+            <div class="hero-actions">
+                <button id="themeToggleBtn" class="btn btn-theme" onclick="toggleTheme()">Dark</button>
+                <button class="btn" onclick="refreshDashboard()">Refresh</button>
+                <a class="pill" href="player.html">Open Player</a>
+                <a class="pill" href="table.html">Open Table</a>
+            </div>
+        </section>
+
+        <section class="controls">
+            <div class="field">
+                <label for="userIdInput">User ID</label>
+                <input id="userIdInput" type="text" value="cabinet_1" placeholder="Enter userId" onkeydown="if(event.key==='Enter'){refreshDashboard();}">
+            </div>
+            <div class="field">
+                <label for="vpsIdInput">Optional VPS ID Filter</label>
+                <input id="vpsIdInput" type="text" placeholder="Filter to one vpsId" onkeydown="if(event.key==='Enter'){refreshDashboard();}">
+            </div>
+            <button class="btn" onclick="refreshDashboard()">Apply</button>
+            <div class="controls-note">This page reads user table state, keeps only entries with a `score` object, and then renders both dynamic fields and raw JSON so arbitrary payload shapes stay inspectable.</div>
+            <div id="status" class="status">Ready.</div>
+        </section>
+
+        <section class="grid-kpi">
+            <article class="kpi">
+                <div class="kpi-label">Score Entries</div>
+                <div id="kpiScoreCount" class="kpi-value">0</div>
+                <div class="kpi-sub">Rows with a score payload</div>
+            </article>
+            <article class="kpi">
+                <div class="kpi-label">Unique Tables</div>
+                <div id="kpiTableCount" class="kpi-value">0</div>
+                <div class="kpi-sub">Distinct `vpsId` count</div>
+            </article>
+            <article class="kpi">
+                <div class="kpi-label">Score Types</div>
+                <div id="kpiScoreTypes" class="kpi-value">0</div>
+                <div class="kpi-sub">Distinct `score_type` values</div>
+            </article>
+            <article class="kpi">
+                <div class="kpi-label">Highest Value</div>
+                <div id="kpiMaxValue" class="kpi-value">-</div>
+                <div class="kpi-sub">Largest numeric `value` seen</div>
+            </article>
+        </section>
+
+        <section class="grid-panels">
+            <section class="panel">
+                <h3 id="scoreOverviewTitle">Score Overview</h3>
+                <table id="scoreOverviewTable"></table>
+            </section>
+
+            <section class="panel">
+                <h3 id="scoreKeysTitle">Observed Score Keys</h3>
+                <div id="scoreKeysDetails" class="chips"></div>
+            </section>
+
+            <section class="panel panel-full">
+                <h3 id="scoreCardsTitle">Scored Tables</h3>
+                <div id="scoreCards" class="score-list"></div>
+            </section>
+        </section>
+    </div>
+
+    <script>
+        const API_BASE = "https://api.vpinplay.com:8888";
+        const PAGE_SIZE = 100;
+
+        function q(id) { return document.getElementById(id); }
+
+        function getPreferredTheme() {
+            const saved = localStorage.getItem("vpin-theme");
+            if (saved === "light" || saved === "dark") return saved;
+            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+
+        function updateThemeToggleLabel(theme) {
+            const btn = q("themeToggleBtn");
+            if (!btn) return;
+            btn.textContent = theme === "dark" ? "Light" : "Dark";
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            updateThemeToggleLabel(theme);
+        }
+
+        function initTheme() {
+            applyTheme(getPreferredTheme());
+        }
+
+        function toggleTheme() {
+            const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            localStorage.setItem("vpin-theme", next);
+            applyTheme(next);
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function fmtDate(value) {
+            if (!value) return "-";
+            const raw = String(value).trim();
+            const hasTimeZone = /([zZ]|[+-]\d{2}:\d{2})$/.test(raw);
+            const normalized = !hasTimeZone && raw.includes("T") ? `${raw}Z` : raw;
+            const d = new Date(normalized);
+            if (Number.isNaN(d.getTime())) return "-";
+            return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "medium" });
+        }
+
+        function fmtNumber(value) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num.toLocaleString() : "-";
+        }
+
+        function flattenObject(obj, prefix = "") {
+            const out = [];
+            if (obj === null || obj === undefined) {
+                return out;
+            }
+            if (Array.isArray(obj)) {
+                out.push({ key: prefix || "value", value: obj.map(item => typeof item === "object" ? JSON.stringify(item) : String(item)).join(", ") });
+                return out;
+            }
+            if (typeof obj !== "object") {
+                out.push({ key: prefix || "value", value: obj });
+                return out;
+            }
+
+            Object.entries(obj).forEach(([key, value]) => {
+                const path = prefix ? `${prefix}.${key}` : key;
+                if (value && typeof value === "object" && !Array.isArray(value)) {
+                    out.push(...flattenObject(value, path));
+                } else if (Array.isArray(value)) {
+                    out.push({ key: path, value: value.map(item => typeof item === "object" ? JSON.stringify(item) : String(item)).join(", ") });
+                } else {
+                    out.push({ key: path, value });
+                }
+            });
+
+            return out;
+        }
+
+        function fmtTableName(row) {
+            const name = row?.vpsdb?.name || row?.vpsId || "Unknown Table";
+            const manufacturer = row?.vpsdb?.manufacturer;
+            const year = row?.vpsdb?.year;
+            const parts = [manufacturer, year].filter(v => String(v || "").trim() !== "");
+            return parts.length ? `${name} (${parts.join(", ")})` : name;
+        }
+
+        function linkVpsId(vpsId) {
+            const id = String(vpsId || "").trim();
+            if (!id) return "-";
+            return `<a href="table.html?vpsid=${encodeURIComponent(id)}">${escapeHtml(id)}</a>`;
+        }
+
+        function setStatus(message) {
+            const el = q("status");
+            if (el) el.textContent = message;
+        }
+
+        function getParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                userId: (params.get("userid") || "").trim(),
+                vpsId: (params.get("vpsid") || "").trim(),
+            };
+        }
+
+        function setParams(userId, vpsId) {
+            const url = new URL(window.location.href);
+            if (userId) url.searchParams.set("userid", userId);
+            else url.searchParams.delete("userid");
+            if (vpsId) url.searchParams.set("vpsid", vpsId);
+            else url.searchParams.delete("vpsid");
+            window.history.replaceState({}, "", url);
+        }
+
+        async function api(path) {
+            try {
+                const response = await fetch(`${API_BASE}${path}`);
+                const data = await response.json().catch(() => ([]));
+                return { ok: response.ok, status: response.status, data };
+            } catch (error) {
+                return { ok: false, status: 0, data: { error: error.message } };
+            }
+        }
+
+        async function fetchAllUserTables(userId) {
+            const allRows = [];
+
+            for (let offset = 0; ; offset += PAGE_SIZE) {
+                const result = await api(`/api/v1/users/${encodeURIComponent(userId)}/tables?limit=${PAGE_SIZE}&offset=${offset}`);
+                if (!result.ok || !Array.isArray(result.data)) {
+                    return { ok: false, rows: allRows, status: result.status, error: result.data?.error || "Request failed" };
+                }
+
+                allRows.push(...result.data);
+                if (result.data.length < PAGE_SIZE) {
+                    return { ok: true, rows: allRows };
+                }
+            }
+        }
+
+        function renderTable(elId, columns, rows) {
+            const el = q(elId);
+            if (!el) return;
+
+            if (!rows || rows.length === 0) {
+                el.innerHTML = `<tr><td class="muted">No data</td></tr>`;
+                return;
+            }
+
+            let html = "<thead><tr>";
+            columns.forEach(col => { html += `<th>${escapeHtml(col.label)}</th>`; });
+            html += "</tr></thead><tbody>";
+
+            rows.forEach(row => {
+                html += "<tr>";
+                columns.forEach(col => {
+                    const raw = col.getter(row);
+                    const text = raw === null || raw === undefined || raw === "" ? "-" : raw;
+                    html += `<td>${col.html ? text : escapeHtml(text)}</td>`;
+                });
+                html += "</tr>";
+            });
+
+            html += "</tbody>";
+            el.innerHTML = html;
+        }
+
+        function summarizeScores(rows) {
+            const keyCounts = new Map();
+            const typeSet = new Set();
+            const tableSet = new Set();
+            let maxValue = null;
+
+            rows.forEach(row => {
+                tableSet.add(row.vpsId);
+
+                const score = row.score || {};
+                flattenObject(score).forEach(item => {
+                    keyCounts.set(item.key, (keyCounts.get(item.key) || 0) + 1);
+                });
+
+                const scoreType = String(score.score_type || "").trim();
+                if (scoreType) typeSet.add(scoreType);
+
+                const numericValue = Number(score.value);
+                if (Number.isFinite(numericValue)) {
+                    maxValue = maxValue === null ? numericValue : Math.max(maxValue, numericValue);
+                }
+            });
+
+            return {
+                scoreCount: rows.length,
+                tableCount: tableSet.size,
+                scoreTypeCount: typeSet.size,
+                maxValue,
+                keyCounts: [...keyCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+            };
+        }
+
+        function renderKeyChips(keyCounts) {
+            const title = q("scoreKeysTitle");
+            const container = q("scoreKeysDetails");
+            if (title) title.textContent = `Observed Score Keys (${keyCounts.length})`;
+
+            if (!container) return;
+            if (!keyCounts.length) {
+                container.innerHTML = `<div class="muted">No score keys found in the current result set.</div>`;
+                return;
+            }
+
+            container.innerHTML = keyCounts.map(([key, count]) => `
+                <span class="chip">
+                    <span>${escapeHtml(key)}</span>
+                    <span class="chip-count">${escapeHtml(String(count))}</span>
+                </span>
+            `).join("");
+        }
+
+        function renderScoreCards(rows) {
+            const title = q("scoreCardsTitle");
+            const container = q("scoreCards");
+            if (title) title.textContent = `Scored Tables (${rows.length})`;
+            if (!container) return;
+
+            if (!rows.length) {
+                container.innerHTML = `<div class="muted">No score payloads matched this filter.</div>`;
+                return;
+            }
+
+            const cards = rows.map(row => {
+                const flatScore = flattenObject(row.score || {});
+                const scoreType = row?.score?.score_type ? String(row.score.score_type) : "Score Payload";
+                const primaryValue = row?.score?.value;
+                const valueBadge = primaryValue === null || primaryValue === undefined || primaryValue === ""
+                    ? escapeHtml(scoreType)
+                    : `${escapeHtml(scoreType)}: ${escapeHtml(fmtNumber(primaryValue))}`;
+
+                return `
+                    <article class="score-card">
+                        <div class="score-card-header">
+                            <div>
+                                <div class="score-card-title">${escapeHtml(fmtTableName(row))}</div>
+                                <div class="score-card-subtitle">
+                                    VPS ID: ${linkVpsId(row.vpsId)}
+                                    <span class="muted">|</span>
+                                    Updated: ${escapeHtml(fmtDate(row.updatedAt))}
+                                </div>
+                            </div>
+                            <div class="score-badge">${valueBadge}</div>
+                        </div>
+                        <div class="score-grid">
+                            ${flatScore.length
+                                ? flatScore.map(item => `
+                                    <div class="score-field">
+                                        <div class="score-label">${escapeHtml(item.key)}</div>
+                                        <div class="score-value">${escapeHtml(item.value ?? "-")}</div>
+                                    </div>
+                                `).join("")
+                                : `<div class="muted">This entry has a score object, but it did not flatten into displayable fields.</div>`}
+                        </div>
+                        <div style="margin-top:12px;">
+                            <div class="score-label" style="margin-bottom:8px;">Raw Score JSON</div>
+                            <pre>${escapeHtml(JSON.stringify(row.score || {}, null, 2))}</pre>
+                        </div>
+                    </article>
+                `;
+            });
+
+            container.innerHTML = cards.join("");
+        }
+
+        function renderOverview(rows) {
+            const title = q("scoreOverviewTitle");
+            if (title) title.textContent = `Score Overview (${rows.length})`;
+
+            renderTable("scoreOverviewTable", [
+                { label: "Table", getter: row => fmtTableName(row) },
+                { label: "VPS ID", getter: row => linkVpsId(row.vpsId), html: true },
+                { label: "Score Type", getter: row => row?.score?.score_type || "-" },
+                { label: "Value", getter: row => fmtNumber(row?.score?.value) },
+                { label: "ROM", getter: row => row?.score?.resolved_rom || row?.score?.rom || row?.vpsdb?.name || "-" },
+                { label: "Updated", getter: row => fmtDate(row.updatedAt) },
+            ], rows.slice(0, 12));
+        }
+
+        async function refreshDashboard() {
+            const userId = q("userIdInput").value.trim();
+            const vpsIdFilter = q("vpsIdInput").value.trim();
+
+            setParams(userId, vpsIdFilter);
+            q("lastRefresh").textContent = `Last refresh: ${new Date().toLocaleString()}`;
+
+            if (!userId) {
+                setStatus("Enter a userId to load scored table state.");
+                renderOverview([]);
+                renderKeyChips([]);
+                renderScoreCards([]);
+                q("kpiScoreCount").textContent = "0";
+                q("kpiTableCount").textContent = "0";
+                q("kpiScoreTypes").textContent = "0";
+                q("kpiMaxValue").textContent = "-";
+                return;
+            }
+
+            setStatus(`Loading scored tables for ${userId}...`);
+            const result = await fetchAllUserTables(userId);
+
+            if (!result.ok) {
+                setStatus(`Failed to load user tables (${result.status || "network"}).`);
+                renderOverview([]);
+                renderKeyChips([]);
+                renderScoreCards([]);
+                return;
+            }
+
+            const filteredRows = result.rows
+                .filter(row => row && row.score && typeof row.score === "object" && !Array.isArray(row.score))
+                .filter(row => !vpsIdFilter || String(row.vpsId || "").trim() === vpsIdFilter)
+                .sort((a, b) => {
+                    const aValue = Number(a?.score?.value);
+                    const bValue = Number(b?.score?.value);
+                    if (Number.isFinite(aValue) && Number.isFinite(bValue) && aValue !== bValue) {
+                        return bValue - aValue;
+                    }
+                    return String(b?.updatedAt || "").localeCompare(String(a?.updatedAt || ""));
+                });
+
+            const summary = summarizeScores(filteredRows);
+            q("kpiScoreCount").textContent = String(summary.scoreCount);
+            q("kpiTableCount").textContent = String(summary.tableCount);
+            q("kpiScoreTypes").textContent = String(summary.scoreTypeCount);
+            q("kpiMaxValue").textContent = summary.maxValue === null ? "-" : fmtNumber(summary.maxValue);
+
+            renderOverview(filteredRows);
+            renderKeyChips(summary.keyCounts);
+            renderScoreCards(filteredRows);
+
+            const filterText = vpsIdFilter ? ` for ${vpsIdFilter}` : "";
+            setStatus(`Loaded ${filteredRows.length} scored table entr${filteredRows.length === 1 ? "y" : "ies"} for ${userId}${filterText}.`);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initTheme();
+            const params = getParams();
+            if (params.userId) q("userIdInput").value = params.userId;
+            if (params.vpsId) q("vpsIdInput").value = params.vpsId;
+            refreshDashboard();
+        });
+    </script>
+</body>
+</html>
