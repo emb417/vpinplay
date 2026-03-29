@@ -87,6 +87,7 @@ From `User`:
 - `LastRun`
 - `StartCount`
 - `RunTime`
+- `Score`
 
 From `VPinPlay`:
 
@@ -148,6 +149,7 @@ This allows storing different versions or configurations of the same table.
   - `lastRun`: DateTime or Unix timestamp
   - `startCount`: Integer
   - `runTime`: Integer
+  - `score`: Object or null
   - `altvpsid`: String
   - `updatedAt`: DateTime
   - `lastSeenAt`: DateTime
@@ -160,6 +162,7 @@ This allows storing different versions or configurations of the same table.
 - **Document structure**:
   - `_id`: Auto-generated
   - `userId`: String (unique)
+  - `initials`: String
   - `machineId`: String (unique, 64 chars)
   - `registeredAt`: DateTime
 - **Indexes**: `userId` (unique), `machineId`
@@ -233,6 +236,7 @@ Recommended merge rules:
 - `lastRun`: keep the newest non-null timestamp
 - `startCount`: keep the maximum value
 - `runTime`: keep the maximum value
+- `score`: replace with latest submitted object-like value
 - `altvpsid`: replace with latest submitted value
 - `lastSeenAt`: always update on successful sync
 - `updatedAt`: update only if one or more user fields changed
@@ -255,7 +259,12 @@ The submission format is designed so programs such as VPinPlay can send a full t
     "rating": 5,
     "lastRun": 1774094666,
     "startCount": 0,
-    "runTime": 0
+    "runTime": 0,
+    "score": {
+      "rom": "ij_l7",
+      "score_type": "HIGH SCORE",
+      "value": 123456789
+    }
   },
   "vpxFile": {
     "filename": "Indiana Jones The Pinball Adventure (Williams 1993).vpx",
@@ -295,6 +304,7 @@ Programs submit many table blobs in a single sync request.
   },
   "client": {
     "userId": "cabinet_1",
+    "initials": "CH",
     "machineId": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2"
   },
   "sentAt": "2026-03-23T15:00:00Z",
@@ -308,7 +318,12 @@ Programs submit many table blobs in a single sync request.
         "rating": 5,
         "lastRun": null,
         "startCount": 0,
-        "runTime": 0
+        "runTime": 0,
+        "score": {
+          "rom": "ij_l7",
+          "score_type": "HIGH SCORE",
+          "value": 123456789
+        }
       },
       "vpxFile": {
         "filename": "Indiana Jones The Pinball Adventure (Williams 1993).vpx",
@@ -351,6 +366,7 @@ Recommended per table:
 - `user.lastRun`
 - `user.startCount`
 - `user.runTime`
+- `user.score`
 - all supported `vpxFile` fields
 - `vpinfe.altvpsid`
 
@@ -430,6 +446,11 @@ Returns the current per-user state for a table.
   "lastRun": null,
   "startCount": 0,
   "runTime": 0,
+  "score": {
+    "rom": "ij_l7",
+    "score_type": "HIGH SCORE",
+    "value": 123456789
+  },
   "altvpsid": "",
   "updatedAt": "2026-03-23T15:00:00Z",
   "lastSeenAt": "2026-03-23T15:00:00Z"
@@ -485,6 +506,11 @@ Returns the user's highest-rated table states (sorted by rating desc).
     "lastRun": "2026-03-23T15:00:00Z",
     "startCount": 10,
     "runTime": 600,
+    "score": {
+      "rom": "ij_l7",
+      "score_type": "HIGH SCORE",
+      "value": 123456789
+    },
     "altvpsid": "",
     "updatedAt": "2026-03-23T15:00:00Z",
     "lastSeenAt": "2026-03-23T15:00:00Z"
@@ -566,6 +592,7 @@ If found:
 - compare `lastRun`
 - compare `startCount`
 - compare `runTime`
+- compare `score`
 - compare `altvpsid`
 - apply merge rules
 
@@ -604,14 +631,16 @@ Recommended validation rules:
 - `startCount` should be integer `>= 0`
 - `runTime` should be integer `>= 0`
 - `lastRun` should be Unix timestamp (integer) or ISO timestamp string or null
+- `score` should be an object or null; array and scalar score payloads should be rejected or normalized
 - boolean detection fields should be booleans
 - if legacy clients send strings like `"true"` and `"false"`, the API should normalize them during validation
 
 Client validation rules:
 
-- Both `userId` and `machineId` are required in the client section
+- `userId`, `initials`, and `machineId` are required in the client section
 - First submission with a `userId` registers it with the provided `machineId`
 - Subsequent submissions must use the same `machineId` for that `userId`
+- `initials` is stored with that `userId` + `machineId` pairing and may be updated on later successful syncs
 - Invalid submissions (wrong machineId for existing userId) are rejected
 
 ---
@@ -622,9 +651,10 @@ No authentication required for API access.
 
 Client validation rules:
 
-- Both `userId` and `machineId` are required in the client section
+- `userId`, `initials`, and `machineId` are required in the client section
 - First submission with a `userId` registers it with the provided `machineId`
 - Subsequent submissions must use the same `machineId` for that `userId`
+- `initials` is stored with that `userId` + `machineId` pairing and may be updated on later successful syncs
 - Invalid submissions (wrong machineId for existing userId) are rejected
 
 ---
@@ -692,7 +722,7 @@ This design intentionally adopts the following rules:
 - use a **Python REST API**, preferably FastAPI
 - use **`Info.VPSId` as the only table identity key**
 - store **`Info.Rom` and all `VPXFile` fields** as canonical global metadata
-- store **`User.Rating`, `User.LastRun`, `User.StartCount`, `User.RunTime`, and `VPinPlay.altvpsid`** as user-specific metadata
+- store **`User.Rating`, `User.LastRun`, `User.StartCount`, `User.RunTime`, `User.Score`, and `VPinPlay.altvpsid`** as user-specific metadata
 - ignore all other `VPinPlay` fields for this service
 - ignore `Medias` for this service
 - allow clients to submit a **full JSON snapshot** on startup
@@ -714,4 +744,3 @@ Recommended first implementation:
 3. determine collection structure and indexing based on actual usage patterns
 
 This provides a clean and practical first version while keeping the data model flexible for future optimization.
-

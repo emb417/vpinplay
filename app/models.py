@@ -68,6 +68,7 @@ class SourceInfo(BaseModel):
 # Client info section
 class ClientInfo(BaseModel):
     userId: str
+    initials: str = Field(..., min_length=1, description="Display initials tied to the userId-machineId pair")
     machineId: str = Field(..., min_length=64, max_length=64, description="64-character machine identifier")
 
     @field_validator('userId', mode='before')
@@ -75,6 +76,13 @@ class ClientInfo(BaseModel):
     def normalize_user_id_value(cls, v):
         if isinstance(v, str):
             return normalize_user_id(v)
+        return v
+
+    @field_validator('initials', mode='before')
+    @classmethod
+    def normalize_initials_value(cls, v):
+        if isinstance(v, str):
+            return v.strip()
         return v
 
 

@@ -81,9 +81,10 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
     and handles upserting them into the database.
     
     Client validation:
-    - Both userId and machineId are required
+    - userId, initials, and machineId are required
     - First submission with a userId registers it with the machineId
     - Subsequent submissions must use the same machineId for that userId
+    - initials are stored for the registered userId-machineId pair and refreshed on every successful sync
     
     Note: Collection structure is subject to change based on future optimization.
     """
@@ -92,6 +93,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
     client_registry = db["client_registry"]
     
     user_id = normalize_user_id(request.client.userId)
+    initials = request.client.initials.strip()
     machine_id = request.client.machineId
     
     # Check if machineId is already registered to a different userId
@@ -139,6 +141,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
         client_registry.insert_one({
             "userId": user_id,
             "userIdNormalized": user_id,
+            "initials": initials,
             "machineId": machine_id,
             "registeredAt": received_at,
             "lastSyncAt": received_at,
@@ -152,6 +155,7 @@ async def submit_sync(request: FullSyncRequest, db: Database = Depends(get_db)):
             {"$set": {
                 "userId": user_id,
                 "userIdNormalized": user_id,
+                "initials": initials,
                 "lastSyncAt": received_at,
                 "lastSyncTableCount": len(request.tables)
             }}

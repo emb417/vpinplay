@@ -154,6 +154,8 @@ Each table entry in the sync payload may also include an optional `user.Score` o
 
 When present, `user.Score` is stored on the user's table state and returned by the user table query endpoints.
 
+The sync request `client` section now requires `userId`, `initials`, and `machineId`. `initials` is not unique, but it is stored with the registered `userId` + `machineId` pair and refreshed on each successful sync.
+
 Query a table:
 
 ```bash
