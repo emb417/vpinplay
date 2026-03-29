@@ -514,7 +514,7 @@ async def get_all_users_latest_matching_scores(
             continue
         extracted_items.extend(_build_extracted_score_items(state, normalized_user_id, initials))
 
-    paged_items = extracted_items[offset:offset + limit]
+    paged_items = enrich_with_vpsdb(extracted_items[offset:offset + limit], db)
     return {
         "limit": limit,
         "offset": offset,
@@ -739,7 +739,7 @@ async def get_user_latest_matching_scores(
     for state in user_states:
         extracted_items.extend(_build_extracted_score_items(state, normalized_user_id, initials))
 
-    paged_items = extracted_items[offset:offset + limit]
+    paged_items = enrich_with_vpsdb(extracted_items[offset:offset + limit], db)
     return {
         "userId": normalized_user_id,
         "initials": initials,
