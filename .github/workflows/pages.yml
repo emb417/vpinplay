@@ -28,6 +28,11 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Prepare Pages artifact
+        run: |
+          cp CNAME www/CNAME
+          touch www/.nojekyll
+
       - name: Upload www as artifact
         uses: actions/upload-pages-artifact@v3
         with:
