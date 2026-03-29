@@ -413,6 +413,7 @@ def _extract_matching_score_entries(score_payload: dict, target_initials: str) -
         matched_entries = [entry for entry in entries if isinstance(entry, dict) and entry_matches(entry)]
         if matched_entries:
             return matched_entries
+        return []
 
     if entry_matches(score_payload):
         return [score_payload]
