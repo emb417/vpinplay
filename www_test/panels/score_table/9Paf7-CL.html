@@ -386,6 +386,12 @@
     if (hasARank && !hasBRank) return -1;
     if (!hasARank && hasBRank) return 1;
 
+    const aMatched = a?.matchedUserId ? 1 : 0;
+    const bMatched = b?.matchedUserId ? 1 : 0;
+    if (aMatched !== bMatched) {
+      return bMatched - aMatched;
+    }
+
     return String(b?.updatedAt || "").localeCompare(String(a?.updatedAt || ""));
   }
 
@@ -556,15 +562,39 @@
       const entries = Array.isArray(score?.entries) ? score.entries : [];
       entries.forEach((entry) => {
         if (!entry || typeof entry !== "object") return;
+        const matchedUserId = resolveMatchedUserId(entry, row.userId, initialsMaps);
+        if (!matchedUserId) return;
         extracted.push({
           ...entry,
-          matchedUserId: resolveMatchedUserId(entry, row.userId, initialsMaps),
+          matchedUserId,
           rowUserId: row.userId,
           updatedAt: row.updatedAt || null,
         });
       });
     });
     return extracted;
+  }
+
+  function dedupeEntries(entries) {
+    const byKey = new Map();
+
+    entries.forEach((entry) => {
+      const key = JSON.stringify([
+        String(entry?.section || "").trim(),
+        entry?.rank ?? null,
+        normalizeInitials(entry?.initials),
+        numericScore(entry),
+        entry?.value_suffix ?? null,
+        Array.isArray(entry?.extra_lines) ? entry.extra_lines : [],
+      ]);
+
+      const existing = byKey.get(key);
+      if (!existing || compareEntries(entry, existing) < 0) {
+        byKey.set(key, entry);
+      }
+    });
+
+    return [...byKey.values()];
   }
 
   async function loadPanel() {
@@ -583,10 +613,10 @@
     }
 
     const initialsMaps = await buildInitialsMaps(rows);
-    const entries = extractEntries(rows, initialsMaps);
+    const entries = dedupeEntries(extractEntries(rows, initialsMaps));
 
     if (!entries.length) {
-      setStatus("No score entry lists were found for Attack from Mars.", "error");
+      setStatus("No matched score entries were found for Attack from Mars.", "error");
       return;
     }
 
@@ -606,7 +636,7 @@
       .sort((a, b) => String(b).localeCompare(String(a)))[0];
 
     q("afm-meta").textContent = `Rows: ${rows.length} | Users: ${initialsMaps.initialsByUserId.size} | Latest update: ${fmtUpdatedAt(latestUpdatedAt)}`;
-    setStatus(`Loaded ${entries.length} score entries across ${rows.length} scored row${rows.length === 1 ? "" : "s"}.`);
+    setStatus(`Loaded ${entries.length} matched score entr${entries.length === 1 ? "y" : "ies"} across ${rows.length} scored row${rows.length === 1 ? "" : "s"}.`);
   }
 
   loadPanel();
