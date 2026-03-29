@@ -526,7 +526,17 @@ def _best_score_item_key(item: dict) -> tuple[str, str, str]:
     return (
         str(item.get("userId") or "").strip().lower(),
         str(item.get("vpsId") or "").strip(),
-        str(_get_case_insensitive_value(score, "section") or item.get("label") or "").strip().lower(),
+        "|".join([
+            str(_get_case_insensitive_value(score, "section") or item.get("label") or "").strip().lower(),
+            str(_get_case_insensitive_value(score, "rank") or "").strip().lower(),
+            str(_get_case_insensitive_value(score, "score") or "").strip().lower(),
+            str(_get_case_insensitive_value(score, "value_suffix") or "").strip().lower(),
+            "|".join(
+                str(part).strip().lower()
+                for part in (_get_case_insensitive_value(score, "extra_lines") or [])
+                if str(part).strip()
+            ),
+        ]),
     )
 
 
