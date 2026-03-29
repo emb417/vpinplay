@@ -7,13 +7,14 @@
           src="https://github.com/superhac/vpinmediadb/raw/refs/heads/main/9Paf7-CL/1k/bg.png"
           alt="Attack from Mars backglass art">
         <div class="afm-header-copy">
-          <div class="afm-kicker">Attack from Mars</div>
-          <h2>Global Score Panel</h2>
+          <div class="afm-title-row">
+            <h2 id="afm-title">Attack from Mars</h2>
+            <div id="afm-rating" class="afm-rating">-</div>
+          </div>
           <div class="afm-subhead" id="afm-subhead"></div>
           <div class="afm-meta" id="afm-meta">Waiting for global score data.</div>
         </div>
       </div>
-      <div class="afm-badge" id="afm-user-badge">All Users</div>
     </div>
 
     <div class="afm-status" id="afm-status">Ready.</div>
@@ -94,17 +95,17 @@
     min-width: 0;
   }
 
-  .afm-kicker {
-    color: var(--afm-accent);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-size: 0.74rem;
-    font-weight: 700;
+  .afm-header h2 {
+    margin: 0;
+    font-size: 1.45rem;
   }
 
-  .afm-header h2 {
-    margin: 4px 0 6px;
-    font-size: 1.45rem;
+  .afm-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
   }
 
   .afm-meta {
@@ -117,6 +118,61 @@
     font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 6px;
+  }
+
+  .afm-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 1.25rem;
+  }
+
+  .afm-rating-count {
+    color: var(--afm-muted);
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+
+  .rating-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    white-space: nowrap;
+  }
+
+  .rating-star-cell {
+    position: relative;
+    display: inline-block;
+    width: 0.95em;
+    height: 1em;
+    line-height: 1;
+  }
+
+  .rating-star {
+    display: block;
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+
+  .rating-star.fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    line-height: 1;
+    color: #facc15;
+  }
+
+  .rating-star.empty {
+    color: var(--afm-muted);
+    opacity: 0.45;
+  }
+
+  .rating-value {
+    margin-left: 6px;
+    color: var(--afm-muted);
+    font-size: 0.84em;
   }
 
   .afm-badge {
@@ -339,6 +395,35 @@
     return Number.isFinite(num) ? num.toLocaleString() : "-";
   }
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function fmtRatingStars(value, options = {}) {
+    if (value === null || value === undefined || value === "") return "-";
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "-";
+    const clamped = Math.max(0, Math.min(5, numeric));
+    const roundedToHalf = Math.round(clamped * 2) / 2;
+    const fullStars = Math.floor(roundedToHalf);
+    const hasHalf = roundedToHalf - fullStars >= 0.5;
+    let stars = "";
+    for (let i = 0; i < 5; i += 1) {
+      const fillPercent =
+        i < fullStars ? 100 : i === fullStars && hasHalf ? 50 : 0;
+      stars += `<span class="rating-star-cell" aria-hidden="true"><span class="rating-star empty">★</span><span class="rating-star fill" style="width:${fillPercent}%">★</span></span>`;
+    }
+    const numericText = options.showNumeric
+      ? ` <span class="rating-value">(${escapeHtml(clamped.toFixed(2))})</span>`
+      : "";
+    return `<span class="rating-stars" title="${escapeHtml(clamped.toFixed(2))} / 5" aria-label="${escapeHtml(clamped.toFixed(2))} out of 5 stars">${stars}</span>${numericText}`;
+  }
+
   function normalizeInitials(value) {
     return typeof value === "string" ? value.trim().toUpperCase() : "";
   }
@@ -509,6 +594,11 @@
     return api(path);
   }
 
+  async function fetchCumulativeRating() {
+    const path = `/api/v1/tables/${encodeURIComponent(PANEL_VPS_ID)}/cumulative-rating`;
+    return api(path);
+  }
+
   async function buildInitialsMaps(rows) {
     const uniqueUserIds = [...new Set(
       rows
@@ -591,7 +681,10 @@
 
   async function loadPanel() {
     setStatus(`Loading global score data for ${PANEL_VPS_ID}...`);
-    const scoreRowsResult = await fetchAllScoreRows();
+    const [scoreRowsResult, ratingResult] = await Promise.all([
+      fetchAllScoreRows(),
+      fetchCumulativeRating(),
+    ]);
 
     if (!scoreRowsResult.ok) {
       setStatus(`Failed to load score data (${scoreRowsResult.status || "network"}).`, "error");
@@ -608,6 +701,23 @@
     if (subhead) {
       subhead.textContent = buildTableSubtitle(rows);
       subhead.hidden = !subhead.textContent;
+    }
+
+    const vpsdb = rows
+      .map(row => row?.vpsdb)
+      .find(item => item && typeof item === "object");
+    const title = q("afm-title");
+    if (title && typeof vpsdb?.name === "string" && vpsdb.name.trim()) {
+      title.textContent = vpsdb.name.trim();
+    }
+
+    const rating = q("afm-rating");
+    if (rating) {
+      const cumulativeRating = ratingResult.ok ? ratingResult.data?.cumulativeRating : null;
+      const ratingCount = ratingResult.ok ? Number(ratingResult.data?.ratingCount || 0) : 0;
+      rating.innerHTML = cumulativeRating
+        ? `${fmtRatingStars(cumulativeRating, { showNumeric: true })}<span class="afm-rating-count">${escapeHtml(String(ratingCount))}</span>`
+        : `<span class="afm-rating-count">No ratings</span>`;
     }
 
     const initialsMaps = await buildInitialsMaps(rows);
