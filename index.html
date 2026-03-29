@@ -409,6 +409,11 @@
                 <h3 id="topPlayerPlaytimeTitle">Top Player Playtime (7d)</h3>
                 <table id="topPlayerPlaytimeTable"></table>
             </section>
+
+            <section class="panel">
+                <h3>Latest Submitted Scores</h3>
+                <table id="latestScoresTable"></table>
+            </section>
         </section>
 
         <section id="allTablesPanel" class="panel bottom">
@@ -489,6 +494,19 @@
 
         function fmtNumber(value) {
             return Number(value || 0).toLocaleString();
+        }
+
+        function fmtScoreValue(score) {
+            if (!score || typeof score !== "object") return "-";
+            const numericValue = score.value ?? score.score;
+            if (numericValue !== null && numericValue !== undefined && numericValue !== "") {
+                const base = fmtNumber(numericValue);
+                return score.value_suffix ? `${base} ${score.value_suffix}` : base;
+            }
+            if (Array.isArray(score.extra_lines) && score.extra_lines.length) {
+                return score.extra_lines.join(" | ");
+            }
+            return "-";
         }
 
         function fmtRatingStars(value, options = {}) {
@@ -665,6 +683,7 @@
                 topPlayTimeRows,
                 newlyAddedRows,
                 topVariantsRows,
+                latestScoresRes,
             ] = await Promise.all([
                 api("/api/v1/sync/last"),
                 api("/api/v1/vpsdb/status"),
@@ -677,6 +696,7 @@
                 fetchPaginatedRows("/api/v1/tables/top-play-time", limit),
                 fetchPaginatedRows("/api/v1/tables/newly-added", limit),
                 fetchPaginatedRows("/api/v1/tables/top-variants", limit),
+                api(`/api/v1/users/scores/latest?limit=${encodeURIComponent(limit)}&offset=0`),
             ]);
 
             q("lastRefresh").textContent = `Last refresh: ${new Date().toLocaleString()}`;
@@ -763,6 +783,17 @@
                     { label: "Run Time", getter: r => `${fmtNumber(r.runTimePlayed)} min` },
                 ],
                 topPlayerRuntimeRows
+            );
+
+            renderTable("latestScoresTable",
+                [
+                    { label: "User", getter: r => linkUserId(r.userId), html: true },
+                    { label: "Table", getter: r => linkVpsId(r.vpsId), html: true },
+                    { label: "Label", getter: r => r.label || "-" },
+                    { label: "Score", getter: r => fmtScoreValue(r.score) },
+                    { label: "Updated", getter: r => fmtDate(r.updatedAt) },
+                ],
+                latestScoresRes.ok && Array.isArray(latestScoresRes.data?.items) ? latestScoresRes.data.items : []
             );
 
             if (ENABLE_ALL_TABLES_PANEL) {
