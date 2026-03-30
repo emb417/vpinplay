@@ -217,7 +217,7 @@ a:hover {
   padding: 36px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: start;
   gap: 24px;
 }
 
